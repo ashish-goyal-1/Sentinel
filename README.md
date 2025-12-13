@@ -61,7 +61,7 @@ Sentinel is a full-stack examination platform that uses AI/ML to prevent cheatin
 ## 📁 Project Structure
 
 ```
-Exam Portal/
+Sentinel/
 ├── src/                          # Frontend (React)
 │   ├── components/
 │   │   ├── ConfirmDialog.jsx     # Confirmation modals

@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
+import Footer from '../components/Footer';
 
 // Eye icons
 const EyeIcon = () => (
@@ -337,6 +338,9 @@ const Register = () => {
                     </p>
                 </div>
             </div>
+
+            {/* Developer Footer */}
+            <Footer />
         </div>
     );
 };

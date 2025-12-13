@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { GoogleOAuthProvider } from '@react-oauth/google';
@@ -22,6 +23,25 @@ import Analytics from './pages/Analytics';
 
 // Components
 import MobileBlocker from './components/MobileBlocker';
+
+// Console Developer Signature (Easter Egg for Recruiters!)
+const DeveloperSignature = () => {
+  useEffect(() => {
+    console.log(
+      "%c 🛡️ Sentinel - Built by Ashish Goyal ",
+      "background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; padding: 8px 16px; border-radius: 8px; font-weight: bold; font-size: 14px;"
+    );
+    console.log(
+      "%c 🔗 GitHub: https://github.com/ashish-goyal-1/Sentinel",
+      "color: #a855f7; font-size: 12px;"
+    );
+    console.log(
+      "%c 💼 LinkedIn: https://www.linkedin.com/in/ashish-goyal-66422b257/",
+      "color: #3b82f6; font-size: 12px;"
+    );
+  }, []);
+  return null;
+};
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -71,6 +91,7 @@ function App() {
       <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
         <AuthProvider>
           <BrowserRouter>
+            <DeveloperSignature />
             <Toaster
               position="top-center"
               toastOptions={{
