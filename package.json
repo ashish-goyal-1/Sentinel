@@ -13,6 +13,7 @@
     "@react-oauth/google": "^0.12.2",
     "axios": "^1.13.2",
     "face-api.js": "^0.22.2",
+    "lucide-react": "^0.561.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-draggable": "^4.5.0",
