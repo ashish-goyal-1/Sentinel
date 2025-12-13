@@ -1,0 +1,117 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base Styles */
+@layer base {
+  * {
+    @apply box-border;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply bg-zinc-950 text-zinc-100 font-sans antialiased;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    @apply w-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-zinc-900;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-zinc-700 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-zinc-600;
+  }
+}
+
+/* Component Styles */
+@layer components {
+
+  /* Glassmorphism Card */
+  .glass-card {
+    @apply bg-white/5 backdrop-blur-md rounded-2xl border border-white/10;
+  }
+
+  .glass-card-hover {
+    @apply glass-card transition-all duration-300 hover:scale-[1.02] hover:bg-white/10 hover:shadow-lg hover:shadow-indigo-500/10;
+  }
+
+  /* Button Variants */
+  .btn-primary {
+    @apply px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-lg shadow-lg shadow-indigo-500/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 text-zinc-400 hover:text-white font-medium rounded-lg transition-all duration-200 hover:bg-white/5;
+  }
+
+  .btn-danger {
+    @apply px-6 py-3 bg-red-600 hover:bg-red-500 text-white font-medium rounded-lg shadow-lg shadow-red-500/30 transition-all duration-200;
+  }
+
+  /* Input Styles */
+  .input-field {
+    @apply w-full px-4 py-3 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200;
+  }
+
+  /* Skeleton Loader */
+  .skeleton {
+    @apply bg-gradient-to-r from-zinc-800 via-zinc-700 to-zinc-800 bg-[length:200%_100%] animate-shimmer rounded-lg;
+  }
+
+  /* Timer Pill */
+  .timer-pill {
+    @apply fixed top-4 left-1/2 -translate-x-1/2 px-6 py-2 bg-zinc-800/90 backdrop-blur-md rounded-full border border-zinc-700 font-mono text-lg z-50 transition-all duration-300;
+  }
+
+  .timer-pill-warning {
+    @apply timer-pill bg-red-900/90 border-red-700 text-red-200;
+  }
+
+  /* Bento Grid */
+  .bento-grid {
+    @apply grid gap-4;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+
+  /* Floating PIP */
+  .pip-container {
+    @apply fixed bottom-6 right-6 w-40 h-40 rounded-full overflow-hidden border-4 border-zinc-700 shadow-xl shadow-black/50 z-40 cursor-move;
+  }
+
+  /* Navigation */
+  .nav-link {
+    @apply flex items-center gap-3 px-4 py-3 text-zinc-400 hover:text-white hover:bg-white/5 rounded-lg transition-all duration-200;
+  }
+
+  .nav-link-active {
+    @apply nav-link text-white bg-indigo-600/20 border-l-2 border-indigo-500;
+  }
+}
+
+/* Utility Classes */
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400;
+  }
+
+  .glow {
+    box-shadow: 0 0 40px rgba(99, 102, 241, 0.3);
+  }
+
+  .glow-sm {
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+  }
+}

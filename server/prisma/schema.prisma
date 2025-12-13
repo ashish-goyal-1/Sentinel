@@ -1,0 +1,83 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model with role-based access
+model User {
+  id               String    @id @default(uuid())
+  name             String
+  email            String    @unique
+  password         String
+  role             Role      @default(STUDENT)
+  faceDescriptor   Float[]   // 128-dimensional face descriptor for identity verification
+  faceRegisteredAt DateTime? // When face was registered
+  exams            Exam[]    @relation("TeacherExams")
+  submissions      Submission[]
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+enum Role {
+  TEACHER
+  STUDENT
+}
+
+// Exam model - owned by a teacher
+model Exam {
+  id          String       @id @default(uuid())
+  title       String
+  description String?
+  duration    Int          // Duration in minutes
+  isActive    Boolean      @default(true)
+  teacherId   String
+  teacher     User         @relation("TeacherExams", fields: [teacherId], references: [id], onDelete: Cascade)
+  questions   Question[]
+  submissions Submission[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+// Question model - belongs to an exam
+model Question {
+  id            String @id @default(uuid())
+  text          String
+  options       Json   // Array of options: ["Option A", "Option B", "Option C", "Option D"]
+  correctOption Int    // Index of correct option (0-3)
+  examId        String
+  exam          Exam   @relation(fields: [examId], references: [id], onDelete: Cascade)
+}
+
+// Submission model - student's exam submission
+model Submission {
+  id                String   @id @default(uuid())
+  score             Int
+  totalQuestions    Int
+  answers           Json     // Object mapping questionId to selected option index
+  warningsCount     Int      @default(0)
+  malpracticeEvents Json?    // Array of malpractice events
+  studentId         String
+  student           User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  examId            String
+  exam              Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+  submittedAt       DateTime @default(now())
+
+  @@unique([studentId, examId]) // One submission per student per exam
+}
+
+// Password Reset Tokens
+model PasswordReset {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  email     String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
