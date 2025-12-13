@@ -1,7 +1,13 @@
 import axios from 'axios';
 
+// Use environment variable or fallback to production/development URLs
+const API_URL = import.meta.env.VITE_API_URL || 
+    (import.meta.env.PROD 
+        ? 'https://sentinel-api-cbsk.onrender.com/api'  // Production (Render)
+        : 'http://localhost:5000/api');                  // Development
+
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+    baseURL: API_URL,
     headers: {
         'Content-Type': 'application/json'
     }
