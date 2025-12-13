@@ -59,7 +59,9 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('token', token);
         api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         setUser(userData);
-        return userData;
+
+        // Return full response so callers can check for token
+        return response.data;
     };
 
     const register = async (name, email, password, role, teacherCode = '') => {

@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 // Use environment variable or fallback to production/development URLs
-const API_URL = import.meta.env.VITE_API_URL || 
-    (import.meta.env.PROD 
+const API_URL = import.meta.env.VITE_API_URL ||
+    (import.meta.env.PROD
         ? 'https://sentinel-api-cbsk.onrender.com/api'  // Production (Render)
         : 'http://localhost:5000/api');                  // Development
 
@@ -24,9 +24,18 @@ api.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response?.status === 401) {
-            localStorage.removeItem('token');
-            delete api.defaults.headers.common['Authorization'];
-            window.location.href = '/login';
+            // Only redirect if we're not already on auth pages
+            const isAuthPage = window.location.pathname === '/login' ||
+                window.location.pathname === '/register' ||
+                window.location.pathname.startsWith('/reset-password') ||
+                window.location.pathname === '/forgot-password';
+
+            if (!isAuthPage) {
+                localStorage.removeItem('token');
+                delete api.defaults.headers.common['Authorization'];
+                // Use navigate instead of hard redirect if possible, otherwise soft reload
+                window.location.replace('/login');
+            }
         }
         return Promise.reject(error);
     }

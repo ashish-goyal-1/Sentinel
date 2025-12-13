@@ -108,234 +108,236 @@ const Register = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-4">
-            <div className="w-full max-w-md">
-                {/* Logo */}
-                <div className="text-center mb-8">
-                    <h1 className="text-4xl font-bold text-gradient mb-2">Sentinel</h1>
-                    <p className="text-zinc-400">Create your account</p>
-                </div>
+        <div className="min-h-screen flex flex-col">
+            <div className="flex-1 flex items-center justify-center p-4">
+                <div className="w-full max-w-md">
+                    {/* Logo */}
+                    <div className="text-center mb-8">
+                        <h1 className="text-4xl font-bold text-gradient mb-2">Sentinel</h1>
+                        <p className="text-zinc-400">Create your account</p>
+                    </div>
 
-                {/* Register Card */}
-                <div className="glass-card p-8">
-                    <h2 className="text-2xl font-semibold mb-6">Get Started</h2>
+                    {/* Register Card */}
+                    <div className="glass-card p-8">
+                        <h2 className="text-2xl font-semibold mb-6">Get Started</h2>
 
-                    <form onSubmit={handleSubmit} className="space-y-5">
-                        <div>
-                            <label className="block text-sm font-medium text-zinc-400 mb-2">
-                                Full Name
-                            </label>
-                            <input
-                                type="text"
-                                name="name"
-                                value={formData.name}
-                                onChange={handleChange}
-                                className="input-field"
-                                placeholder="John Doe"
-                                required
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-zinc-400 mb-2">
-                                Email Address
-                            </label>
-                            <input
-                                type="email"
-                                name="email"
-                                value={formData.email}
-                                onChange={handleChange}
-                                className="input-field"
-                                placeholder="you@example.com"
-                                required
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-zinc-400 mb-2">
-                                Password
-                            </label>
-                            <div className="relative">
-                                <input
-                                    type={showPassword ? 'text' : 'password'}
-                                    name="password"
-                                    value={formData.password}
-                                    onChange={handleChange}
-                                    className="input-field pr-12"
-                                    placeholder="••••••••"
-                                    required
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white transition-colors"
-                                >
-                                    {showPassword ? <EyeSlashIcon /> : <EyeIcon />}
-                                </button>
-                            </div>
-
-                            {/* Password Strength Meter */}
-                            {formData.password && (
-                                <div className="mt-3 space-y-3">
-                                    {/* Strength Bar */}
-                                    <div>
-                                        <div className="flex justify-between items-center mb-1">
-                                            <span className="text-xs text-zinc-400">Strength</span>
-                                            <span className={`text-xs font-medium ${passwordStrength.level <= 1 ? 'text-red-400' :
-                                                passwordStrength.level === 2 ? 'text-orange-400' :
-                                                    passwordStrength.level === 3 ? 'text-yellow-400' : 'text-green-400'
-                                                }`}>
-                                                {passwordStrength.text}
-                                            </span>
-                                        </div>
-                                        <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
-                                            <div
-                                                className={`h-full transition-all duration-300 ${passwordStrength.color}`}
-                                                style={{ width: `${passwordStrength.level * 25}%` }}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Requirements Checklist */}
-                                    <div className="p-3 bg-zinc-800/50 rounded-lg space-y-2">
-                                        <p className="text-xs text-zinc-400 font-medium mb-2">Password Requirements:</p>
-
-                                        <div className={`flex items-center gap-2 text-sm ${passwordChecks.minLength ? 'text-green-400' : 'text-zinc-500'}`}>
-                                            {passwordChecks.minLength ? <CheckIcon /> : <XIcon />}
-                                            <span>At least 8 characters</span>
-                                        </div>
-
-                                        <div className={`flex items-center gap-2 text-sm ${passwordChecks.hasUppercase ? 'text-green-400' : 'text-zinc-500'}`}>
-                                            {passwordChecks.hasUppercase ? <CheckIcon /> : <XIcon />}
-                                            <span>One uppercase letter (A-Z)</span>
-                                        </div>
-
-                                        <div className={`flex items-center gap-2 text-sm ${passwordChecks.hasNumber ? 'text-green-400' : 'text-zinc-500'}`}>
-                                            {passwordChecks.hasNumber ? <CheckIcon /> : <XIcon />}
-                                            <span>One number (0-9)</span>
-                                        </div>
-
-                                        <div className={`flex items-center gap-2 text-sm ${passwordChecks.hasSpecial ? 'text-green-400' : 'text-zinc-500'}`}>
-                                            {passwordChecks.hasSpecial ? <CheckIcon /> : <XIcon />}
-                                            <span>One special character (!@#$%^&*)</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-zinc-400 mb-2">
-                                Confirm Password
-                            </label>
-                            <div className="relative">
-                                <input
-                                    type={showConfirmPassword ? 'text' : 'password'}
-                                    name="confirmPassword"
-                                    value={formData.confirmPassword}
-                                    onChange={handleChange}
-                                    className={`input-field pr-12 ${formData.confirmPassword && formData.password !== formData.confirmPassword
-                                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-                                        : formData.confirmPassword && formData.password === formData.confirmPassword
-                                            ? 'border-green-500 focus:border-green-500 focus:ring-green-500'
-                                            : ''
-                                        }`}
-                                    placeholder="••••••••"
-                                    required
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white transition-colors"
-                                >
-                                    {showConfirmPassword ? <EyeSlashIcon /> : <EyeIcon />}
-                                </button>
-                            </div>
-                            {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-                                <p className="text-red-400 text-xs mt-1">Passwords do not match</p>
-                            )}
-                            {formData.confirmPassword && formData.password === formData.confirmPassword && (
-                                <p className="text-green-400 text-xs mt-1">Passwords match ✓</p>
-                            )}
-                        </div>
-
-                        {/* Role Selection */}
-                        <div>
-                            <label className="block text-sm font-medium text-zinc-400 mb-3">
-                                I am a...
-                            </label>
-                            <div className="grid grid-cols-2 gap-3">
-                                <button
-                                    type="button"
-                                    onClick={() => setFormData({ ...formData, role: 'STUDENT', teacherCode: '' })}
-                                    className={`p-4 rounded-xl border transition-all duration-200 ${formData.role === 'STUDENT'
-                                        ? 'bg-indigo-600/20 border-indigo-500 text-white'
-                                        : 'bg-zinc-800/50 border-zinc-700 text-zinc-400 hover:border-zinc-600'
-                                        }`}
-                                >
-                                    <span className="text-2xl mb-2 block">🎓</span>
-                                    <span className="font-medium">Student</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setFormData({ ...formData, role: 'TEACHER' })}
-                                    className={`p-4 rounded-xl border transition-all duration-200 ${formData.role === 'TEACHER'
-                                        ? 'bg-indigo-600/20 border-indigo-500 text-white'
-                                        : 'bg-zinc-800/50 border-zinc-700 text-zinc-400 hover:border-zinc-600'
-                                        }`}
-                                >
-                                    <span className="text-2xl mb-2 block">👨‍🏫</span>
-                                    <span className="font-medium">Teacher</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Teacher Access Code - Only show if Teacher is selected */}
-                        {formData.role === 'TEACHER' && (
-                            <div className="p-4 bg-yellow-900/20 border border-yellow-700/50 rounded-xl">
-                                <label className="block text-sm font-medium text-yellow-400 mb-2">
-                                    🔑 Teacher Access Code
+                        <form onSubmit={handleSubmit} className="space-y-5">
+                            <div>
+                                <label className="block text-sm font-medium text-zinc-400 mb-2">
+                                    Full Name
                                 </label>
                                 <input
-                                    type="password"
-                                    name="teacherCode"
-                                    value={formData.teacherCode}
+                                    type="text"
+                                    name="name"
+                                    value={formData.name}
                                     onChange={handleChange}
                                     className="input-field"
-                                    placeholder="Enter admin-provided code"
+                                    placeholder="John Doe"
                                     required
                                 />
-                                <p className="text-xs text-zinc-500 mt-2">
-                                    Contact your institution administrator for the teacher access code
-                                </p>
                             </div>
-                        )}
 
-                        <button
-                            type="submit"
-                            disabled={loading || !allRequirementsMet}
-                            className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {loading ? (
-                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            ) : (
-                                'Create Account'
+                            <div>
+                                <label className="block text-sm font-medium text-zinc-400 mb-2">
+                                    Email Address
+                                </label>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    value={formData.email}
+                                    onChange={handleChange}
+                                    className="input-field"
+                                    placeholder="you@example.com"
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-zinc-400 mb-2">
+                                    Password
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        type={showPassword ? 'text' : 'password'}
+                                        name="password"
+                                        value={formData.password}
+                                        onChange={handleChange}
+                                        className="input-field pr-12"
+                                        placeholder="••••••••"
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white transition-colors"
+                                    >
+                                        {showPassword ? <EyeSlashIcon /> : <EyeIcon />}
+                                    </button>
+                                </div>
+
+                                {/* Password Strength Meter */}
+                                {formData.password && (
+                                    <div className="mt-3 space-y-3">
+                                        {/* Strength Bar */}
+                                        <div>
+                                            <div className="flex justify-between items-center mb-1">
+                                                <span className="text-xs text-zinc-400">Strength</span>
+                                                <span className={`text-xs font-medium ${passwordStrength.level <= 1 ? 'text-red-400' :
+                                                    passwordStrength.level === 2 ? 'text-orange-400' :
+                                                        passwordStrength.level === 3 ? 'text-yellow-400' : 'text-green-400'
+                                                    }`}>
+                                                    {passwordStrength.text}
+                                                </span>
+                                            </div>
+                                            <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                                                <div
+                                                    className={`h-full transition-all duration-300 ${passwordStrength.color}`}
+                                                    style={{ width: `${passwordStrength.level * 25}%` }}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Requirements Checklist */}
+                                        <div className="p-3 bg-zinc-800/50 rounded-lg space-y-2">
+                                            <p className="text-xs text-zinc-400 font-medium mb-2">Password Requirements:</p>
+
+                                            <div className={`flex items-center gap-2 text-sm ${passwordChecks.minLength ? 'text-green-400' : 'text-zinc-500'}`}>
+                                                {passwordChecks.minLength ? <CheckIcon /> : <XIcon />}
+                                                <span>At least 8 characters</span>
+                                            </div>
+
+                                            <div className={`flex items-center gap-2 text-sm ${passwordChecks.hasUppercase ? 'text-green-400' : 'text-zinc-500'}`}>
+                                                {passwordChecks.hasUppercase ? <CheckIcon /> : <XIcon />}
+                                                <span>One uppercase letter (A-Z)</span>
+                                            </div>
+
+                                            <div className={`flex items-center gap-2 text-sm ${passwordChecks.hasNumber ? 'text-green-400' : 'text-zinc-500'}`}>
+                                                {passwordChecks.hasNumber ? <CheckIcon /> : <XIcon />}
+                                                <span>One number (0-9)</span>
+                                            </div>
+
+                                            <div className={`flex items-center gap-2 text-sm ${passwordChecks.hasSpecial ? 'text-green-400' : 'text-zinc-500'}`}>
+                                                {passwordChecks.hasSpecial ? <CheckIcon /> : <XIcon />}
+                                                <span>One special character (!@#$%^&*)</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-zinc-400 mb-2">
+                                    Confirm Password
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        type={showConfirmPassword ? 'text' : 'password'}
+                                        name="confirmPassword"
+                                        value={formData.confirmPassword}
+                                        onChange={handleChange}
+                                        className={`input-field pr-12 ${formData.confirmPassword && formData.password !== formData.confirmPassword
+                                            ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                                            : formData.confirmPassword && formData.password === formData.confirmPassword
+                                                ? 'border-green-500 focus:border-green-500 focus:ring-green-500'
+                                                : ''
+                                            }`}
+                                        placeholder="••••••••"
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white transition-colors"
+                                    >
+                                        {showConfirmPassword ? <EyeSlashIcon /> : <EyeIcon />}
+                                    </button>
+                                </div>
+                                {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+                                    <p className="text-red-400 text-xs mt-1">Passwords do not match</p>
+                                )}
+                                {formData.confirmPassword && formData.password === formData.confirmPassword && (
+                                    <p className="text-green-400 text-xs mt-1">Passwords match ✓</p>
+                                )}
+                            </div>
+
+                            {/* Role Selection */}
+                            <div>
+                                <label className="block text-sm font-medium text-zinc-400 mb-3">
+                                    I am a...
+                                </label>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, role: 'STUDENT', teacherCode: '' })}
+                                        className={`p-4 rounded-xl border transition-all duration-200 ${formData.role === 'STUDENT'
+                                            ? 'bg-indigo-600/20 border-indigo-500 text-white'
+                                            : 'bg-zinc-800/50 border-zinc-700 text-zinc-400 hover:border-zinc-600'
+                                            }`}
+                                    >
+                                        <span className="text-2xl mb-2 block">🎓</span>
+                                        <span className="font-medium">Student</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, role: 'TEACHER' })}
+                                        className={`p-4 rounded-xl border transition-all duration-200 ${formData.role === 'TEACHER'
+                                            ? 'bg-indigo-600/20 border-indigo-500 text-white'
+                                            : 'bg-zinc-800/50 border-zinc-700 text-zinc-400 hover:border-zinc-600'
+                                            }`}
+                                    >
+                                        <span className="text-2xl mb-2 block">👨‍🏫</span>
+                                        <span className="font-medium">Teacher</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Teacher Access Code - Only show if Teacher is selected */}
+                            {formData.role === 'TEACHER' && (
+                                <div className="p-4 bg-yellow-900/20 border border-yellow-700/50 rounded-xl">
+                                    <label className="block text-sm font-medium text-yellow-400 mb-2">
+                                        🔑 Teacher Access Code
+                                    </label>
+                                    <input
+                                        type="password"
+                                        name="teacherCode"
+                                        value={formData.teacherCode}
+                                        onChange={handleChange}
+                                        className="input-field"
+                                        placeholder="Enter admin-provided code"
+                                        required
+                                    />
+                                    <p className="text-xs text-zinc-500 mt-2">
+                                        Contact your institution administrator for the teacher access code
+                                    </p>
+                                </div>
                             )}
-                        </button>
 
-                        {!allRequirementsMet && formData.password && (
-                            <p className="text-center text-xs text-zinc-500">
-                                Meet all password requirements to continue
-                            </p>
-                        )}
-                    </form>
+                            <button
+                                type="submit"
+                                disabled={loading || !allRequirementsMet}
+                                className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {loading ? (
+                                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                ) : (
+                                    'Create Account'
+                                )}
+                            </button>
 
-                    <p className="mt-6 text-center text-zinc-400">
-                        Already have an account?{' '}
-                        <Link to="/login" className="text-indigo-400 hover:text-indigo-300">
-                            Sign in
-                        </Link>
-                    </p>
+                            {!allRequirementsMet && formData.password && (
+                                <p className="text-center text-xs text-zinc-500">
+                                    Meet all password requirements to continue
+                                </p>
+                            )}
+                        </form>
+
+                        <p className="mt-6 text-center text-zinc-400">
+                            Already have an account?{' '}
+                            <Link to="/login" className="text-indigo-400 hover:text-indigo-300">
+                                Sign in
+                            </Link>
+                        </p>
+                    </div>
                 </div>
             </div>
 

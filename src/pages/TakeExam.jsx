@@ -5,6 +5,7 @@ import Draggable from 'react-draggable';
 import * as faceapi from 'face-api.js';
 import api from '../services/api';
 import FaceRegistration from '../components/FaceRegistration';
+import { FACE_DETECTION_CONFIG } from '../config';
 
 const TakeExam = () => {
     const { id } = useParams();
@@ -386,8 +387,8 @@ const TakeExam = () => {
                     // Calculate distance between current and stored descriptor
                     const distance = faceapi.euclideanDistance(detection.descriptor, storedDescriptor);
 
-                    // Threshold: 0.6 is commonly used (lower = stricter)
-                    if (distance > 0.6) {
+                    // Threshold from config (default: 0.6, lower = stricter)
+                    if (distance > FACE_DETECTION_CONFIG.MATCH_THRESHOLD) {
                         toast.error('⚠️ Face mismatch detected! This is being logged.', { id: 'face-mismatch' });
                         setMalpracticeEvents(prev => [...prev, {
                             type: 'FACE_MISMATCH',

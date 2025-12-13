@@ -89,8 +89,8 @@ const Login = () => {
     };
 
     return (
-        <>
-            <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="min-h-screen flex flex-col">
+            <div className="flex-1 flex items-center justify-center p-4">
                 <div className="w-full max-w-md">
                     {/* Logo */}
                     <div className="text-center mb-8">
@@ -109,7 +109,7 @@ const Login = () => {
                                 onError={handleGoogleError}
                                 theme="filled_black"
                                 size="large"
-                                width="100%"
+                                width={400}
                                 text="continue_with"
                                 shape="rectangular"
                             />
@@ -205,7 +205,7 @@ const Login = () => {
 
             {/* Developer Footer */}
             <Footer />
-        </>
+        </div>
     );
 };
 

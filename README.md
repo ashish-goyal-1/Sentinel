@@ -4,6 +4,32 @@
 
 Sentinel is a full-stack examination platform that uses AI/ML to prevent cheating through browser sensors, face detection, identity verification, and behavioral monitoring. Built with modern technologies and designed for scalability.
 
+## 🌐 Live Demo
+
+| Platform | URL |
+|----------|-----|
+| **Frontend** | [sentinel-seven-smoky.vercel.app](https://sentinel-seven-smoky.vercel.app) |
+| **Backend API** | [sentinel-api-cbsk.onrender.com](https://sentinel-api-cbsk.onrender.com/api/health) |
+| **GitHub** | [github.com/ashish-goyal-1/Sentinel](https://github.com/ashish-goyal-1/Sentinel) |
+
+> ⚠️ **Note:** Backend is on Render free tier - first request may take 30-60 seconds to wake up.
+
+---
+
+## 📑 Table of Contents
+
+- [Features](#-features)
+- [Tech Stack](#️-tech-stack)
+- [Project Structure](#-project-structure)
+- [Getting Started](#-getting-started)
+- [Database Schema](#-database-schema)
+- [Resume Highlights](#-resume-highlights)
+- [API Endpoints](#-api-endpoints)
+- [Design System](#-design-system)
+- [Malpractice Detection](#️-malpractice-detection-summary)
+- [Author](#-author)
+- [License](#-license)
+
 ---
 
 ## ✨ Features

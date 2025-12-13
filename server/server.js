@@ -10,14 +10,36 @@ const submissionRoutes = require('./src/routes/submissionRoutes');
 const analyticsRoutes = require('./src/routes/analyticsRoutes');
 const userRoutes = require('./src/routes/userRoutes');
 
+// Import middleware
+const { sanitizeBody } = require('./src/middleware/sanitizer');
+
 const app = express();
+
+// Allowed origins for CORS
+const allowedOrigins = [
+    process.env.CLIENT_URL,
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://localhost:5175',
+    'https://sentinel-seven-smoky.vercel.app' // Production
+].filter(Boolean);
 
 // Middleware
 app.use(cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl)
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true
 }));
 app.use(express.json({ limit: '50mb' })); // Increased limit for face descriptor data
+app.use(sanitizeBody); // XSS protection - sanitize all inputs
 
 // Health check route
 app.get('/api/health', (req, res) => {
