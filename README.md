@@ -6,11 +6,13 @@ Sentinel is a full-stack examination platform that uses AI/ML to prevent cheatin
 
 ## 🌐 Live Demo
 
-| Platform | URL |
+### 👉 **[Try Sentinel Live](https://sentinel-seven-smoky.vercel.app)** 👈
+
+| Resource | URL |
 |----------|-----|
-| **Frontend** | [sentinel-seven-smoky.vercel.app](https://sentinel-seven-smoky.vercel.app) |
-| **Backend API** | [sentinel-api-cbsk.onrender.com](https://sentinel-api-cbsk.onrender.com/api/health) |
-| **GitHub** | [github.com/ashish-goyal-1/Sentinel](https://github.com/ashish-goyal-1/Sentinel) |
+| 🎯 **Demo App** | [sentinel-seven-smoky.vercel.app](https://sentinel-seven-smoky.vercel.app) |
+| 🔗 Backend API | [sentinel-api-cbsk.onrender.com](https://sentinel-api-cbsk.onrender.com/api/health) |
+| 📂 Source Code | [github.com/ashish-goyal-1/Sentinel](https://github.com/ashish-goyal-1/Sentinel) |
 
 > ⚠️ **Note:** Backend is on Render free tier - first request may take 30-60 seconds to wake up.
 

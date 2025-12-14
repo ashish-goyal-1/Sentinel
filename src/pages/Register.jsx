@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
@@ -44,6 +44,7 @@ const Register = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [loading, setLoading] = useState(false);
+    const isSubmitting = useRef(false); // Synchronous lock for rapid clicks
     const { register } = useAuth();
     const navigate = useNavigate();
 
@@ -78,6 +79,10 @@ const Register = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        // Block rapid clicks instantly (synchronous check)
+        if (isSubmitting.current) return;
+        isSubmitting.current = true;
+
         if (!allRequirementsMet) {
             toast.error('Please meet all password requirements');
             return;
@@ -103,6 +108,7 @@ const Register = () => {
         } catch (error) {
             toast.error(error.response?.data?.error || 'Registration failed');
         } finally {
+            isSubmitting.current = false;
             setLoading(false);
         }
     };
