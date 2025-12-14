@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import FaceRegistration from '../components/FaceRegistration';
 
 const StudentDashboard = () => {
     const { user, logout } = useAuth();
@@ -11,9 +12,29 @@ const StudentDashboard = () => {
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    // Face registration state
+    const [faceStatus, setFaceStatus] = useState({ registered: false, registeredAt: null, loading: true });
+    const [showFaceRegistration, setShowFaceRegistration] = useState(false);
+
     useEffect(() => {
         fetchData();
+        checkFaceStatus();
     }, []);
+
+    // Check face registration status
+    const checkFaceStatus = async () => {
+        try {
+            const response = await api.get('/users/face-status');
+            setFaceStatus({
+                registered: response.data.hasFaceRegistered,
+                registeredAt: response.data.registeredAt,
+                loading: false
+            });
+        } catch (error) {
+            console.error('Face status check error:', error);
+            setFaceStatus(prev => ({ ...prev, loading: false }));
+        }
+    };
 
     const fetchData = async () => {
         try {
@@ -118,6 +139,46 @@ const StudentDashboard = () => {
                     </div>
                 </div>
 
+                {/* Face Verification Card */}
+                <div className="glass-card p-6 mb-8">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${faceStatus.registered ? 'bg-green-600/20' : 'bg-yellow-600/20'
+                                }`}>
+                                <span className="text-2xl">{faceStatus.registered ? '✅' : '👤'}</span>
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-semibold">Face Verification</h3>
+                                {faceStatus.loading ? (
+                                    <p className="text-zinc-400 text-sm">Checking status...</p>
+                                ) : faceStatus.registered ? (
+                                    <p className="text-green-400 text-sm">
+                                        Registered {faceStatus.registeredAt && `on ${new Date(faceStatus.registeredAt).toLocaleDateString()}`}
+                                    </p>
+                                ) : (
+                                    <p className="text-yellow-400 text-sm">Not registered — required before taking exams</p>
+                                )}
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => setShowFaceRegistration(true)}
+                            disabled={faceStatus.loading}
+                            className={`${faceStatus.registered ? 'btn-secondary' : 'btn-primary'} text-sm flex items-center gap-2`}
+                        >
+                            {faceStatus.registered ? (
+                                <>🔄 Re-register</>
+                            ) : (
+                                <>📸 Register Face</>
+                            )}
+                        </button>
+                    </div>
+                    {!faceStatus.registered && !faceStatus.loading && (
+                        <p className="text-xs text-zinc-500 mt-3">
+                            💡 Tip: Register your face now to avoid delays when starting an exam
+                        </p>
+                    )}
+                </div>
+
                 {/* Available Exams */}
                 <div className="glass-card p-6 mb-8">
                     <h3 className="text-xl font-semibold mb-4">Available Exams</h3>
@@ -196,6 +257,17 @@ const StudentDashboard = () => {
                     </div>
                 )}
             </main>
+
+            {/* Face Registration Modal */}
+            <FaceRegistration
+                isOpen={showFaceRegistration}
+                onClose={() => setShowFaceRegistration(false)}
+                onSuccess={() => {
+                    setShowFaceRegistration(false);
+                    checkFaceStatus(); // Refresh status after successful registration
+                    toast.success('Face registered successfully!');
+                }}
+            />
         </div>
     );
 };
