@@ -1,18 +1,21 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import Draggable from 'react-draggable';
 import * as faceapi from 'face-api.js';
 import api from '../services/api';
-import FaceRegistration from '../components/FaceRegistration';
 import { FACE_DETECTION_CONFIG } from '../config';
 
 const TakeExam = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
     const dragRef = useRef(null); // For react-draggable React 19 compatibility
+
+    // Get verified state from ExamPrecheck navigation
+    const { verified, storedDescriptor: passedDescriptor } = location.state || {};
 
     const [exam, setExam] = useState(null);
     const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -27,11 +30,26 @@ const TakeExam = () => {
     const [modelsLoaded, setModelsLoaded] = useState(false);
     const warningsRef = useRef(0);
 
-    // Face matching state
-    const [showFaceRegistration, setShowFaceRegistration] = useState(false);
-    const [faceRegistered, setFaceRegistered] = useState(false);
+    // Face matching state - now initialized from precheck
     const [storedDescriptor, setStoredDescriptor] = useState(null);
-    const [checkingFace, setCheckingFace] = useState(true);
+    const faceRegistered = !!passedDescriptor; // True if came from precheck with descriptor
+    const showFaceRegistration = false; // No longer needed - handled by precheck
+    const checkingFace = false; // No longer needed - handled by precheck
+
+    // Redirect if not verified (accessed directly without precheck)
+    useEffect(() => {
+        if (!verified) {
+            toast.error('Please complete the pre-exam checks first');
+            navigate(`/student/exam/${id}`);
+        }
+    }, [verified, navigate, id]);
+
+    // Initialize stored descriptor from precheck
+    useEffect(() => {
+        if (passedDescriptor) {
+            setStoredDescriptor(new Float32Array(passedDescriptor));
+        }
+    }, [passedDescriptor]);
 
     // Keep warnings ref in sync
     useEffect(() => {
@@ -75,34 +93,7 @@ const TakeExam = () => {
         fetchExam();
     }, [id, navigate]);
 
-    // Check if face is registered (Option B: before exam)
-    useEffect(() => {
-        const checkFaceStatus = async () => {
-            try {
-                const response = await api.get('/users/face-status');
-                if (response.data.hasFaceRegistered) {
-                    setFaceRegistered(true);
-                    // Fetch stored descriptor for verification
-                    const descriptorRes = await api.get('/users/face-descriptor');
-                    setStoredDescriptor(new Float32Array(descriptorRes.data.descriptor));
-                } else {
-                    setShowFaceRegistration(true);
-                }
-            } catch (error) {
-                console.error('Face status check error:', error);
-                // Continue without face matching if check fails
-                setFaceRegistered(false);
-            } finally {
-                setCheckingFace(false);
-            }
-        };
-
-        if (!loading && exam) {
-            checkFaceStatus();
-        }
-    }, [loading, exam]);
-
-    // Timer
+    // Timer - starts immediately since precheck is complete
     useEffect(() => {
         if (timeLeft <= 0 || loading || !exam) return;
 
@@ -636,25 +627,6 @@ const TakeExam = () => {
                     </div>
                 </div>
             )}
-
-            {/* Face Registration Modal (Option B: before exam) */}
-            <FaceRegistration
-                isOpen={showFaceRegistration}
-                onClose={() => {
-                    setShowFaceRegistration(false);
-                    // If they close without registering, continue without face matching
-                    setCheckingFace(false);
-                }}
-                onSuccess={() => {
-                    setFaceRegistered(true);
-                    setShowFaceRegistration(false);
-                    setCheckingFace(false);
-                    // Fetch the new descriptor
-                    api.get('/users/face-descriptor').then(res => {
-                        setStoredDescriptor(new Float32Array(res.data.descriptor));
-                    }).catch(console.error);
-                }}
-            />
         </div>
     );
 };

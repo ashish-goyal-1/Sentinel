@@ -16,6 +16,7 @@ import TeacherDashboard from './pages/TeacherDashboard';
 import StudentDashboard from './pages/StudentDashboard';
 import CreateExam from './pages/CreateExam';
 import ExamDetail from './pages/ExamDetail';
+import ExamPrecheck from './pages/ExamPrecheck';
 import TakeExam from './pages/TakeExam';
 import Results from './pages/Results';
 import SubmissionHistory from './pages/SubmissionHistory';
@@ -168,6 +169,14 @@ function App() {
               />
               <Route
                 path="/student/exam/:id"
+                element={
+                  <ProtectedRoute allowedRoles={['STUDENT']}>
+                    <ExamPrecheck />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/student/exam/:id/take"
                 element={
                   <ProtectedRoute allowedRoles={['STUDENT']}>
                     <TakeExam />
