@@ -290,6 +290,8 @@ const TakeExam = () => {
                 });
                 if (videoRef.current) {
                     videoRef.current.srcObject = stream;
+                    // Explicitly play to ensure video starts on all browsers
+                    await videoRef.current.play().catch(e => console.log('Video play error:', e));
                     setCameraActive(true);
                     setFaceStatus('checking');
                 }
