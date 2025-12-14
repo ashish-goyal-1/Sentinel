@@ -12,6 +12,7 @@ const TakeExam = () => {
     const navigate = useNavigate();
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
+    const dragRef = useRef(null); // For react-draggable React 19 compatibility
 
     const [exam, setExam] = useState(null);
     const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -586,8 +587,8 @@ const TakeExam = () => {
             </div>
 
             {/* Webcam PIP */}
-            <Draggable bounds="body">
-                <div className="pip-container">
+            <Draggable bounds="body" nodeRef={dragRef}>
+                <div ref={dragRef} className="pip-container">
                     <video
                         ref={videoRef}
                         autoPlay
