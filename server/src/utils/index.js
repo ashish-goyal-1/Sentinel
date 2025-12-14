@@ -18,18 +18,23 @@ const generateRandomString = (length = 32) => {
 
 /**
  * Sanitize user input to prevent XSS
+ * Only strips dangerous HTML tags - React handles escaping on render
  * @param {string} str - String to sanitize
  * @returns {string} Sanitized string
  */
 const sanitizeInput = (str) => {
     if (typeof str !== 'string') return str;
     return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#x27;')
-        .replace(/\//g, '&#x2F;');
+        // Remove script tags and their content
+        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+        // Remove other dangerous tags but preserve content
+        .replace(/<\/?(?:script|iframe|object|embed|form|input|button|textarea|select|option)\b[^>]*>/gi, '')
+        // Remove event handlers from any remaining tags
+        .replace(/\s*on\w+\s*=\s*["'][^"']*["']/gi, '')
+        // Remove javascript: URLs
+        .replace(/javascript:/gi, '')
+        // Trim whitespace
+        .trim();
 };
 
 /**
