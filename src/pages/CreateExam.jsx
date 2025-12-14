@@ -125,12 +125,23 @@ const CreateExam = () => {
                                 <input
                                     type="number"
                                     value={examData.duration}
-                                    onChange={(e) => setExamData({ ...examData, duration: parseInt(e.target.value) || 30 })}
-                                    className="input-field w-32"
+                                    onChange={(e) => {
+                                        const value = parseInt(e.target.value) || 0;
+                                        setExamData({ ...examData, duration: value });
+                                    }}
+                                    className={`input-field w-32 ${examData.duration < 5 || examData.duration > 180
+                                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                                        : ''
+                                        }`}
                                     min="5"
                                     max="180"
                                     required
                                 />
+                                {(examData.duration < 5 || examData.duration > 180) && (
+                                    <p className="text-red-400 text-xs mt-1">
+                                        ⚠️ Duration must be between 5 and 180 minutes
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -214,8 +225,8 @@ const CreateExam = () => {
                         </Link>
                         <button
                             type="submit"
-                            disabled={loading}
-                            className="btn-primary flex items-center gap-2"
+                            disabled={loading || examData.duration < 5 || examData.duration > 180}
+                            className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {loading ? (
                                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
