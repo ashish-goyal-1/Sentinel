@@ -282,7 +282,7 @@ const TakeExam = () => {
         }
     }, [exam, fullscreenWarningShown, enterFullscreen]);
 
-    // Camera setup
+    // Camera setup - don't start if FaceRegistration modal is open
     useEffect(() => {
         const startCamera = async () => {
             try {
@@ -303,7 +303,8 @@ const TakeExam = () => {
             }
         };
 
-        if (!loading && exam) {
+        // Only start camera if exam loaded AND face registration modal is not showing
+        if (!loading && exam && !showFaceRegistration) {
             startCamera();
         }
 
@@ -312,7 +313,7 @@ const TakeExam = () => {
                 videoRef.current.srcObject.getTracks().forEach(track => track.stop());
             }
         };
-    }, [loading, exam]);
+    }, [loading, exam, showFaceRegistration]);
 
     // Real face detection using face-api.js
     useEffect(() => {
