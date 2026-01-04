@@ -53,15 +53,15 @@ export const truncateText = (text, maxLength = 50) => {
 /**
  * Get grade from percentage
  * @param {number} percentage - Score percentage
- * @returns {object} Grade info with letter and color
+ * @returns {object} Grade info with letter, color, bg, and message
  */
 export const getGrade = (percentage) => {
-    if (percentage >= 90) return { letter: 'A+', color: 'text-green-400', bg: 'bg-green-500/20' };
-    if (percentage >= 80) return { letter: 'A', color: 'text-green-400', bg: 'bg-green-500/20' };
-    if (percentage >= 70) return { letter: 'B', color: 'text-blue-400', bg: 'bg-blue-500/20' };
-    if (percentage >= 60) return { letter: 'C', color: 'text-yellow-400', bg: 'bg-yellow-500/20' };
-    if (percentage >= 50) return { letter: 'D', color: 'text-orange-400', bg: 'bg-orange-500/20' };
-    return { letter: 'F', color: 'text-red-400', bg: 'bg-red-500/20' };
+    if (percentage >= 90) return { letter: 'A+', color: 'text-green-400', bg: 'bg-green-500/20', message: 'Outstanding!' };
+    if (percentage >= 80) return { letter: 'A', color: 'text-green-400', bg: 'bg-green-500/20', message: 'Excellent work!' };
+    if (percentage >= 70) return { letter: 'B', color: 'text-blue-400', bg: 'bg-blue-500/20', message: 'Good job!' };
+    if (percentage >= 60) return { letter: 'C', color: 'text-yellow-400', bg: 'bg-yellow-500/20', message: 'Keep practicing!' };
+    if (percentage >= 50) return { letter: 'D', color: 'text-orange-400', bg: 'bg-orange-500/20', message: 'Room for improvement' };
+    return { letter: 'F', color: 'text-red-400', bg: 'bg-red-500/20', message: 'Study harder next time' };
 };
 
 /**

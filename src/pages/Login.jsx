@@ -195,6 +195,68 @@ const Login = () => {
                             </Link>
                         </p>
                     </div>
+
+                    {/* Demo Credentials Card */}
+                    <div className="mt-6 glass-card p-6 border border-indigo-500/30">
+                        <div className="flex items-center gap-2 mb-4">
+                            <span className="text-xl">🎯</span>
+                            <h3 className="font-semibold text-indigo-400">Quick Demo Access</h3>
+                        </div>
+
+                        <p className="text-sm text-zinc-400 mb-4">
+                            Explore the platform instantly with demo accounts:
+                        </p>
+
+                        <div className="grid grid-cols-2 gap-3">
+                            <button
+                                onClick={async () => {
+                                    setEmail('student@demo.com');
+                                    setPassword('Demo@123');
+                                    setLoading(true);
+                                    try {
+                                        const user = await login('student@demo.com', 'Demo@123');
+                                        toast.success(`Welcome, ${user.name}!`);
+                                        navigate('/student');
+                                    } catch (error) {
+                                        toast.error('Demo login failed. Please try manual login.');
+                                    } finally {
+                                        setLoading(false);
+                                    }
+                                }}
+                                disabled={loading}
+                                className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-600/20 border border-emerald-500/50 text-emerald-400 hover:bg-emerald-600/30 transition-all"
+                            >
+                                <span>🎓</span>
+                                <span className="font-medium">Try as Student</span>
+                            </button>
+
+                            <button
+                                onClick={async () => {
+                                    setEmail('teacher@demo.com');
+                                    setPassword('Demo@123');
+                                    setLoading(true);
+                                    try {
+                                        const user = await login('teacher@demo.com', 'Demo@123');
+                                        toast.success(`Welcome, ${user.name}!`);
+                                        navigate('/teacher');
+                                    } catch (error) {
+                                        toast.error('Demo login failed. Please try manual login.');
+                                    } finally {
+                                        setLoading(false);
+                                    }
+                                }}
+                                disabled={loading}
+                                className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-purple-600/20 border border-purple-500/50 text-purple-400 hover:bg-purple-600/30 transition-all"
+                            >
+                                <span>👨‍🏫</span>
+                                <span className="font-medium">Try as Teacher</span>
+                            </button>
+                        </div>
+
+                        <p className="text-xs text-zinc-500 mt-3 text-center">
+                            student@demo.com / teacher@demo.com • Password: Demo@123
+                        </p>
+                    </div>
                 </div>
             </div>
 

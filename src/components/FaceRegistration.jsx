@@ -2,12 +2,13 @@ import { useState, useRef, useEffect } from 'react';
 import * as faceapi from 'face-api.js';
 import { toast } from 'react-hot-toast';
 import api from '../services/api';
+import logger from '../utils/logger';
 
 const FaceRegistration = ({ isOpen, onClose, onSuccess }) => {
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
 
-    // States: loading, ready, capturing, review, saving, success, error
+    // States: loading, ready, capuring, review, saving, success, error
     const [status, setStatus] = useState('loading');
     const [cameraActive, setCameraActive] = useState(false);
     const [modelsLoaded, setModelsLoaded] = useState(false);
@@ -17,48 +18,81 @@ const FaceRegistration = ({ isOpen, onClose, onSuccess }) => {
     const [tempDescriptor, setTempDescriptor] = useState(null);
     const [capturedImage, setCapturedImage] = useState(null);
 
-    // Load face-api models
+    // Load face-api models (in background - don't block camera)
     useEffect(() => {
         if (!isOpen) return;
 
-        const loadModels = async () => {
+        const loadModels = async (retryCount = 0) => {
+            logger.divider('FACE REGISTRATION - MODEL LOADING');
+            logger.info(`Loading face recognition models for registration (attempt ${retryCount + 1}/3)`);
+
             try {
                 const MODEL_URL = '/models';
-                await Promise.all([
-                    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-                    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-                    faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
-                ]);
+                logger.debug('Model URL', { MODEL_URL });
+
+                logger.info('Loading TinyFaceDetector model...');
+                await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+                logger.success('TinyFaceDetector loaded');
+
+                logger.info('Loading FaceLandmark68 model...');
+                await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+                logger.success('FaceLandmark68 loaded');
+
+                logger.info('Loading FaceRecognition model...');
+                await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+                logger.success('FaceRecognition loaded');
+
                 setModelsLoaded(true);
-                console.log('Face recognition models loaded');
+                logger.success('All face recognition models loaded successfully');
+                logger.divider();
             } catch (error) {
-                console.error('Error loading face models:', error);
-                setStatus('error');
+                logger.error(`Error loading face models (attempt ${retryCount + 1}/3)`, error);
+
+                if (retryCount < 2) {
+                    logger.warn(`Retrying model load in 1 second... (fallback retry mechanism)`);
+                    setTimeout(() => loadModels(retryCount + 1), 1000);
+                } else {
+                    logger.error('Failed to load AI models after 3 attempts - using fallback mode');
+                    toast.error('Failed to load AI models');
+                    logger.warn('Camera will still work - error will show at capture time (fallback behavior)');
+                }
             }
         };
         loadModels();
     }, [isOpen]);
 
-    // Start camera
+    // Start camera IMMEDIATELY when modal opens (don't wait for models)
     useEffect(() => {
-        if (!isOpen || !modelsLoaded) return;
+        if (!isOpen) return;
 
         const startCamera = async () => {
+            logger.info('Starting camera for face registration');
+            logger.pushContext('Camera Initialization');
+
             try {
+                logger.info('Requesting camera permissions...');
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: { width: 640, height: 480, facingMode: 'user' }
                 });
+                logger.success('Camera permission granted');
+
                 if (videoRef.current) {
+                    logger.debug('Attaching stream to video element');
                     videoRef.current.srcObject = stream;
-                    // Explicitly play to ensure video starts on all browsers
-                    await videoRef.current.play().catch(e => console.log('Video play error:', e));
+                    await videoRef.current.play().catch(e => {
+                        logger.warn('Video play warning (non-critical)', e);
+                    });
                     setCameraActive(true);
                     setStatus('ready');
+                    logger.success('Camera active and ready for face capture');
                 }
+
+                logger.popContext();
             } catch (error) {
-                console.error('Camera error:', error);
+                logger.error('Camera initialization failed', error);
                 toast.error('Camera access is required for face registration');
                 setStatus('error');
+                logger.popContext();
             }
         };
 
@@ -66,41 +100,82 @@ const FaceRegistration = ({ isOpen, onClose, onSuccess }) => {
 
         return () => {
             if (videoRef.current?.srcObject) {
+                logger.info('Stopping camera stream (cleanup)');
                 videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+                logger.debug('Camera stream stopped');
             }
         };
-    }, [isOpen, modelsLoaded]);
+    }, [isOpen]);
 
     // Capture face (now just stores to state, doesn't send yet)
     const captureFace = async () => {
-        if (!videoRef.current || !cameraActive) return;
+        logger.divider('FACE CAPTURE');
+        logger.info('Face capture initiated');
+        logger.pushContext('Face Capture');
+
+        if (!videoRef.current || !cameraActive) {
+            logger.warn('Capture aborted - camera not ready', {
+                hasVideo: !!videoRef.current,
+                cameraActive
+            });
+            logger.popContext();
+            return;
+        }
+
+        // Check if models are loaded before capturing
+        if (!modelsLoaded) {
+            logger.warn('Capture aborted - AI models still loading (fallback: wait for models)');
+            toast.error('AI models are still loading. Please wait a moment.');
+            logger.popContext();
+            return;
+        }
 
         setStatus('capturing');
         setCountdown(3);
+        logger.info('Starting countdown (3 seconds)...');
 
         // Countdown before capture
         for (let i = 3; i > 0; i--) {
+            logger.debug(`Countdown: ${i}`);
             setCountdown(i);
             await new Promise(resolve => setTimeout(resolve, 1000));
         }
         setCountdown(null);
+        logger.info('Countdown complete - capturing face...');
 
         try {
             // Detect face with descriptor
+            logger.info('Detecting face in video stream...');
+            const startTime = performance.now();
+
             const detection = await faceapi
                 .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
                 .withFaceLandmarks()
                 .withFaceDescriptor();
 
+            const detectionTime = performance.now() - startTime;
+            logger.debug(`Face detection completed (${detectionTime.toFixed(2)}ms)`);
+
             if (!detection) {
+                logger.warn('No face detected in frame');
                 toast.error('No face detected. Please position your face clearly.');
                 setStatus('ready');
+                logger.popContext();
                 return;
             }
+
+            logger.success('Face detected successfully');
+            logger.debug('Detection details', {
+                hasLandmarks: !!detection.landmarks,
+                hasDescriptor: !!detection.descriptor,
+                descriptorLength: detection.descriptor.length,
+                detectionScore: detection.detection.score.toFixed(4)
+            });
 
             // ==========================================
             // CAPTURE FRAME FOR REVIEW
             // ==========================================
+            logger.info('Capturing frame for review...');
             const canvas = canvasRef.current;
             const video = videoRef.current;
             canvas.width = video.videoWidth;
@@ -115,47 +190,89 @@ const FaceRegistration = ({ isOpen, onClose, onSuccess }) => {
             // Convert to image URL
             const imageUrl = canvas.toDataURL('image/jpeg', 0.8);
             setCapturedImage(imageUrl);
+            logger.success('Frame captured for review', {
+                imageSize: `${canvas.width}x${canvas.height}`,
+                imageDataLength: imageUrl.length
+            });
 
             // ==========================================
             // STORE DESCRIPTOR (DON'T SEND YET)
             // ==========================================
-            setTempDescriptor(Array.from(detection.descriptor));
+            logger.info('Storing face descriptor for review...');
+            const descriptorArray = Array.from(detection.descriptor);
+            setTempDescriptor(descriptorArray);
             setStatus('review');
+
+            logger.success('Face descriptor stored (not saved yet)', {
+                descriptorLength: descriptorArray.length,
+                sample: descriptorArray.slice(0, 5)
+            });
+            logger.info('Waiting for user confirmation before saving...');
+            logger.popContext();
+            logger.divider();
 
             toast.success('Face captured! Review your photo below.');
         } catch (error) {
-            console.error('Face capture error:', error);
+            logger.error('Face capture failed', error);
             toast.error('Failed to capture face. Please try again.');
             setStatus('ready');
+            logger.popContext();
         }
     };
 
     // Retake - go back to camera view
     const handleRetake = () => {
+        logger.info('User requested retake - clearing captured data');
         setTempDescriptor(null);
         setCapturedImage(null);
         setStatus('ready');
+        logger.debug('Ready for new capture');
     };
 
     // Confirm and save - NOW send to backend
     const handleConfirmSave = async () => {
-        if (!tempDescriptor) return;
+        if (!tempDescriptor) {
+            logger.warn('Save aborted - no descriptor available');
+            return;
+        }
+
+        logger.divider('SAVING FACE DESCRIPTOR');
+        logger.info('User confirmed - saving face descriptor to server');
+        logger.pushContext('Save Face Descriptor');
 
         setStatus('saving');
+        logger.debug('Descriptor details', {
+            length: tempDescriptor.length,
+            sample: tempDescriptor.slice(0, 5)
+        });
 
         try {
+            logger.info('Sending face descriptor to backend...');
+            const startTime = performance.now();
+
             const response = await api.post('/users/face-descriptor', {
                 descriptor: tempDescriptor
             });
 
+            const saveTime = performance.now() - startTime;
+            logger.success(`Face descriptor saved successfully (${saveTime.toFixed(2)}ms)`);
+            logger.debug('Server response', response.data);
+
             if (response.data.message) {
                 toast.success('Face registered successfully! 🎉');
                 setStatus('success');
+                logger.success('Face registration complete!');
 
                 // Stop camera
                 if (videoRef.current?.srcObject) {
+                    logger.info('Stopping camera stream...');
                     videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+                    logger.debug('Camera stopped');
                 }
+
+                logger.info('Closing registration modal in 1.5 seconds...');
+                logger.popContext();
+                logger.divider();
 
                 // Notify parent after short delay
                 setTimeout(() => {
@@ -164,9 +281,11 @@ const FaceRegistration = ({ isOpen, onClose, onSuccess }) => {
                 }, 1500);
             }
         } catch (error) {
-            console.error('Face save error:', error);
+            logger.error('Failed to save face descriptor', error);
+            logger.warn('Staying in review mode for retry (fallback behavior)');
             toast.error(error.response?.data?.error || 'Failed to save face');
             setStatus('review'); // Stay in review so they can retry
+            logger.popContext();
         }
     };
 

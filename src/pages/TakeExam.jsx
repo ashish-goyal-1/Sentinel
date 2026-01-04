@@ -5,6 +5,17 @@ import Draggable from 'react-draggable';
 import * as faceapi from 'face-api.js';
 import api from '../services/api';
 import { FACE_DETECTION_CONFIG } from '../config';
+import { formatTime } from '../utils';
+
+// Fisher-Yates shuffle algorithm for question randomization
+const shuffleArray = (array) => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+};
 
 const TakeExam = () => {
     const { id } = useParams();
@@ -28,6 +39,8 @@ const TakeExam = () => {
     const [cameraActive, setCameraActive] = useState(false);
     const [faceStatus, setFaceStatus] = useState('loading');
     const [modelsLoaded, setModelsLoaded] = useState(false);
+    const [shuffledQuestions, setShuffledQuestions] = useState([]); // Randomized question order
+    const [examStarted, setExamStarted] = useState(false); // Track if exam is in progress
     const warningsRef = useRef(0);
 
     // Face matching state - now initialized from precheck
@@ -81,8 +94,16 @@ const TakeExam = () => {
         const fetchExam = async () => {
             try {
                 const response = await api.get(`/exams/${id}`);
-                setExam(response.data);
-                setTimeLeft(response.data.duration * 60);
+                const examData = response.data;
+
+                // Shuffle questions for this student
+                if (examData.questions && examData.questions.length > 0) {
+                    setShuffledQuestions(shuffleArray(examData.questions));
+                }
+
+                setExam(examData);
+                setTimeLeft(examData.duration * 60);
+                setExamStarted(true);
             } catch (error) {
                 toast.error(error.response?.data?.error || 'Failed to load exam');
                 navigate('/student');
@@ -110,6 +131,20 @@ const TakeExam = () => {
 
         return () => clearInterval(timer);
     }, [timeLeft, loading, exam]);
+
+    // Prevent accidental page refresh/close during exam
+    useEffect(() => {
+        const handleBeforeUnload = (e) => {
+            if (examStarted && !submitting) {
+                e.preventDefault();
+                e.returnValue = 'You have an exam in progress. Leaving will submit your current answers. Are you sure?';
+                return e.returnValue;
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [examStarted, submitting]);
 
     // Tab visibility detection
     useEffect(() => {
@@ -442,11 +477,7 @@ const TakeExam = () => {
         }
     }, [id, answers, malpracticeEvents, submitting, navigate]);
 
-    const formatTime = (seconds) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    };
+    // formatTime is imported from utils/index.js
 
     if (loading) {
         return (
@@ -459,7 +490,8 @@ const TakeExam = () => {
         );
     }
 
-    const question = exam?.questions?.[currentQuestion];
+    const question = shuffledQuestions[currentQuestion];
+    const totalQuestions = shuffledQuestions.length;
     const isLowTime = timeLeft < 300; // Less than 5 minutes
 
     return (
@@ -494,13 +526,13 @@ const TakeExam = () => {
                 {/* Progress */}
                 <div className="mb-8">
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-zinc-400">Question {currentQuestion + 1} of {exam?.questions?.length}</span>
+                        <span className="text-zinc-400">Question {currentQuestion + 1} of {totalQuestions}</span>
                         <span className="text-zinc-400">{Object.keys(answers).length} answered</span>
                     </div>
                     <div className="w-full h-2 bg-zinc-800 rounded-full overflow-hidden">
                         <div
                             className="h-full bg-indigo-500 transition-all duration-300"
-                            style={{ width: `${((currentQuestion + 1) / exam?.questions?.length) * 100}%` }}
+                            style={{ width: `${((currentQuestion + 1) / totalQuestions) * 100}%` }}
                         />
                     </div>
                 </div>
@@ -539,13 +571,13 @@ const TakeExam = () => {
                     </button>
 
                     <div className="flex items-center gap-2 flex-wrap justify-center">
-                        {exam?.questions?.map((_, i) => (
+                        {shuffledQuestions.map((q, i) => (
                             <button
                                 key={i}
                                 onClick={() => setCurrentQuestion(i)}
                                 className={`w-8 h-8 rounded-lg text-sm font-medium transition-all ${i === currentQuestion
                                     ? 'bg-indigo-600 text-white'
-                                    : answers[exam.questions[i].id] !== undefined
+                                    : answers[q.id] !== undefined
                                         ? 'bg-green-600/20 text-green-400 border border-green-600'
                                         : 'bg-zinc-800 text-zinc-400'
                                     }`}
@@ -555,7 +587,7 @@ const TakeExam = () => {
                         ))}
                     </div>
 
-                    {currentQuestion === exam?.questions?.length - 1 ? (
+                    {currentQuestion === totalQuestions - 1 ? (
                         <button
                             onClick={() => handleSubmit(false)}
                             disabled={submitting}

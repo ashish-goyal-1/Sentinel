@@ -3,6 +3,94 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import api from '../services/api';
 
+// Event type to icon/color mapping
+const eventConfig = {
+    TAB_SWITCH: { icon: '🔄', label: 'Tab Switch', color: 'text-yellow-400' },
+    FACE_NOT_DETECTED: { icon: '👤', label: 'Face Not Detected', color: 'text-orange-400' },
+    MULTIPLE_FACES: { icon: '👥', label: 'Multiple Faces', color: 'text-red-400' },
+    FACE_MISMATCH: { icon: '❌', label: 'Face Mismatch', color: 'text-red-500' },
+    FULLSCREEN_EXIT: { icon: '🖥️', label: 'Fullscreen Exit', color: 'text-yellow-400' },
+    COPY_PASTE_ATTEMPT: { icon: '📋', label: 'Copy/Paste Attempt', color: 'text-orange-400' },
+    RIGHT_CLICK: { icon: '🖱️', label: 'Right Click', color: 'text-yellow-300' },
+    DEVTOOLS_ATTEMPT: { icon: '🔧', label: 'DevTools Attempt', color: 'text-red-400' },
+    SCREENSHOT_ATTEMPT: { icon: '📸', label: 'Screenshot Attempt', color: 'text-orange-400' },
+};
+
+// Submission card with expandable malpractice events
+const SubmissionCard = ({ submission: sub }) => {
+    const [expanded, setExpanded] = useState(false);
+    const events = sub.malpracticeEvents || [];
+    const hasEvents = events.length > 0;
+
+    return (
+        <div className="rounded-xl bg-zinc-800/30 border border-zinc-700/50 overflow-hidden">
+            {/* Main row */}
+            <div
+                className={`p-4 flex justify-between items-center ${hasEvents ? 'cursor-pointer hover:bg-zinc-800/50' : ''}`}
+                onClick={() => hasEvents && setExpanded(!expanded)}
+            >
+                <div className="flex-1">
+                    <p className="font-medium">{sub.student.name}</p>
+                    <p className="text-sm text-zinc-400">{sub.student.email}</p>
+                    <p className="text-xs text-zinc-500 mt-1">
+                        {new Date(sub.submittedAt).toLocaleString()}
+                        {sub.warningsCount > 0 && (
+                            <span className="text-yellow-400 ml-2">⚠️ {sub.warningsCount} warnings</span>
+                        )}
+                        {hasEvents && (
+                            <span className="text-red-400 ml-2">🚨 {events.length} events</span>
+                        )}
+                    </p>
+                </div>
+                <div className="flex items-center gap-3">
+                    <div className={`text-2xl font-bold ${sub.percentage >= 70 ? 'text-green-400' :
+                        sub.percentage >= 40 ? 'text-yellow-400' : 'text-red-400'
+                        }`}>
+                        {sub.percentage}%
+                    </div>
+                    {hasEvents && (
+                        <span className={`text-zinc-400 transition-transform ${expanded ? 'rotate-180' : ''}`}>
+                            ▼
+                        </span>
+                    )}
+                </div>
+            </div>
+
+            {/* Expanded events section */}
+            {expanded && hasEvents && (
+                <div className="border-t border-zinc-700/50 p-4 bg-zinc-900/50">
+                    <h4 className="text-sm font-medium text-zinc-300 mb-3">Malpractice Events Timeline</h4>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {events.map((event, idx) => {
+                            const config = eventConfig[event.type] || { icon: '⚠️', label: event.type, color: 'text-zinc-400' };
+                            return (
+                                <div key={idx} className="flex items-start gap-3 text-sm">
+                                    <span className="text-lg">{config.icon}</span>
+                                    <div className="flex-1">
+                                        <span className={`font-medium ${config.color}`}>{config.label}</span>
+                                        {event.distance && (
+                                            <span className="text-zinc-500 ml-2">(distance: {parseFloat(event.distance).toFixed(3)})</span>
+                                        )}
+                                        {event.faceCount && (
+                                            <span className="text-zinc-500 ml-2">({event.faceCount} faces)</span>
+                                        )}
+                                        {event.key && (
+                                            <span className="text-zinc-500 ml-2">(key: {event.key})</span>
+                                        )}
+                                    </div>
+                                    <span className="text-xs text-zinc-500">
+                                        {event.timestamp ? new Date(event.timestamp).toLocaleTimeString() : ''}
+                                    </span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
 const ExamDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -192,25 +280,9 @@ const ExamDetail = () => {
                         {submissions.length === 0 ? (
                             <p className="text-zinc-400 text-center py-8">No submissions yet</p>
                         ) : (
-                            <div className="space-y-3 max-h-96 overflow-y-auto">
+                            <div className="space-y-3 max-h-[500px] overflow-y-auto">
                                 {submissions.map((sub) => (
-                                    <div key={sub.id} className="p-4 rounded-xl bg-zinc-800/30 border border-zinc-700/50 flex justify-between items-center">
-                                        <div>
-                                            <p className="font-medium">{sub.student.name}</p>
-                                            <p className="text-sm text-zinc-400">{sub.student.email}</p>
-                                            <p className="text-xs text-zinc-500 mt-1">
-                                                {new Date(sub.submittedAt).toLocaleString()}
-                                                {sub.warningsCount > 0 && (
-                                                    <span className="text-yellow-400 ml-2">⚠️ {sub.warningsCount} warnings</span>
-                                                )}
-                                            </p>
-                                        </div>
-                                        <div className={`text-2xl font-bold ${sub.percentage >= 70 ? 'text-green-400' :
-                                            sub.percentage >= 40 ? 'text-yellow-400' : 'text-red-400'
-                                            }`}>
-                                            {sub.percentage}%
-                                        </div>
-                                    </div>
+                                    <SubmissionCard key={sub.id} submission={sub} />
                                 ))}
                             </div>
                         )}

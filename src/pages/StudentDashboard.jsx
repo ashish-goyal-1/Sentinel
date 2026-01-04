@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import FaceRegistration from '../components/FaceRegistration';
+import Footer from '../components/Footer';
 
 const StudentDashboard = () => {
     const { user, logout } = useAuth();
@@ -268,6 +269,8 @@ const StudentDashboard = () => {
                     toast.success('Face registered successfully!');
                 }}
             />
+
+            <Footer />
         </div>
     );
 };

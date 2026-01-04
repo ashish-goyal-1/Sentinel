@@ -27,6 +27,7 @@ Sentinel is a full-stack examination platform that uses AI/ML to prevent cheatin
 - [API Endpoints](#-api-endpoints)
 - [Design System](#-design-system)
 - [Malpractice Detection](#️-malpractice-detection-summary)
+- [Future Additions](#-future-additions)
 - [Author](#-author)
 - [License](#-license)
 
@@ -46,9 +47,11 @@ Sentinel is a full-stack examination platform that uses AI/ML to prevent cheatin
 - **Manage Exams** - Activate/deactivate exams on demand
 - **Analytics Dashboard** - Visual charts and statistics
 - **Suspicious Students** - Identify high-warning students with risk levels
+- **Malpractice Events Viewer** - Expandable timeline of violations per submission
 - **Raw SQL Analytics** - Complex aggregations using `prisma.$queryRaw`
+- **Inline Validation** - Visual feedback (red borders) for incomplete exam fields
 
-### 🔒 Security Features (10+ Anti-Cheating Measures)
+### 🔒 Security Features (14 Anti-Cheating Measures)
 - **Face Detection** - Detects missing face or multiple faces
 - **Face Matching** - Verifies identity against registered face using Euclidean distance
 - **Face Registration Review** - Preview before saving to prevent bad captures
@@ -60,6 +63,8 @@ Sentinel is a full-stack examination platform that uses AI/ML to prevent cheatin
 - **Mobile Blocking** - Desktop-only enforcement for exam integrity
 - **Rate Limiting** - Prevents brute-force attacks
 - **Teacher Access Code** - Restricts teacher registration
+- **Question Randomization** - Questions shuffled per student to prevent answer sharing
+- **Refresh Warning** - Browser confirmation before leaving exam page
 
 ### 🔐 Authentication
 - **JWT-based Auth** - Secure token authentication
@@ -92,42 +97,53 @@ Sentinel/
 │   ├── components/
 │   │   ├── ConfirmDialog.jsx     # Confirmation modals
 │   │   ├── FaceRegistration.jsx  # Face capture with review step
+│   │   ├── Footer.jsx            # Footer component
 │   │   ├── MobileBlocker.jsx     # Mobile device blocker
 │   │   ├── RoleSelectionModal.jsx# Google OAuth role picker
 │   │   └── Skeleton.jsx          # Loading skeletons
 │   ├── context/
 │   │   └── AuthContext.jsx       # Authentication state
 │   ├── pages/
+│   │   ├── Analytics.jsx         # Raw SQL dashboard with charts
+│   │   ├── CreateExam.jsx        # Exam creation with inline validation
+│   │   ├── ExamDetail.jsx        # Exam management + malpractice viewer
+│   │   ├── ExamPrecheck.jsx      # Pre-exam security checks
+│   │   ├── ForgotPassword.jsx    # Password reset request
 │   │   ├── Login.jsx
 │   │   ├── Register.jsx
-│   │   ├── TeacherDashboard.jsx
+│   │   ├── ResetPassword.jsx     # Password reset with token
+│   │   ├── Results.jsx           # Pie charts + answer review
 │   │   ├── StudentDashboard.jsx
+│   │   ├── SubmissionHistory.jsx # Past exam attempts
 │   │   ├── TakeExam.jsx          # AI proctoring + face verification
-│   │   ├── Results.jsx           # Pie charts
-│   │   └── Analytics.jsx         # Raw SQL dashboard with charts
+│   │   └── TeacherDashboard.jsx
 │   └── services/
 │       └── api.js                # Axios interceptors
 │
 ├── server/                       # Backend (Express)
 │   ├── src/
 │   │   ├── controllers/
+│   │   │   ├── analyticsController.js # $queryRaw SQL 
 │   │   │   ├── authController.js      # Login, Register, Google OAuth
 │   │   │   ├── examController.js
-│   │   │   ├── submissionController.js
-│   │   │   ├── analyticsController.js # $queryRaw SQL - THE RESUME FLEX
-│   │   │   └── faceController.js      # Face descriptor management
+│   │   │   ├── faceController.js      # Face descriptor management
+│   │   │   ├── questionController.js  # Question CRUD
+│   │   │   └── submissionController.js
 │   │   ├── middleware/
 │   │   │   ├── authMiddleware.js      # JWT protection
-│   │   │   └── rateLimiter.js         # Rate limiting
+│   │   │   ├── rateLimiter.js         # Rate limiting
+│   │   │   └── sanitizer.js           # XSS protection
 │   │   ├── routes/
+│   │   │   ├── analyticsRoutes.js
 │   │   │   ├── authRoutes.js
 │   │   │   ├── examRoutes.js
-│   │   │   ├── analyticsRoutes.js
+│   │   │   ├── questionRoutes.js
+│   │   │   ├── submissionRoutes.js
 │   │   │   └── userRoutes.js          # Face descriptor endpoints
 │   │   └── services/
 │   │       └── emailService.js        # Resend integration
 │   ├── prisma/
-│   │   └── schema.prisma              # Database schema
+│   │   └── schema.prisma              # Database schema with indexes
 │   └── server.js                      # Express entry point
 │
 └── package.json
@@ -212,17 +228,58 @@ model User {
   submissions      Submission[]
 }
 
+model Exam {
+  id          String       @id @default(uuid())
+  title       String
+  description String?
+  duration    Int          // Duration in minutes
+  isActive    Boolean      @default(true)
+  teacherId   String
+  teacher     User         @relation("TeacherExams")
+  questions   Question[]
+  submissions Submission[]
+  
+  @@index([teacherId])  // Faster teacher lookup
+  @@index([isActive])   // Filter optimization
+}
+
+model Question {
+  id            String @id @default(uuid())
+  text          String
+  options       Json   // ["Option A", "Option B", "Option C", "Option D"]
+  correctOption Int    // Index 0-3
+  examId        String
+  
+  @@index([examId])  // Faster exam questions lookup
+}
+
 model Submission {
   id                String   @id @default(uuid())
   score             Int
   totalQuestions    Int
   warningsCount     Int      @default(0)
-  malpracticeEvents Json     // Detailed event log
+  malpracticeEvents Json?    // Detailed event log
   answers           Json
-  student           User
-  exam              Exam
+  studentId         String
+  examId            String
+  submittedAt       DateTime @default(now())
+  
+  @@unique([studentId, examId])  // One submission per student per exam
+  @@index([studentId])           // Performance optimization
+  @@index([examId])              // Query optimization
+  @@index([submittedAt])         // Sorting optimization
+}
+
+model PasswordReset {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  email     String
+  expiresAt DateTime
+  used      Boolean  @default(false)
 }
 ```
+
+> 💡 **Performance Note:** 7 database indexes added on foreign keys to reduce query time complexity from O(n) to O(log n)
 
 ---
 
@@ -284,6 +341,16 @@ malpracticeEvents: [
 ]
 ```
 
+### 5. Database Performance Optimization
+```prisma
+// schema.prisma - Indexes for query optimization
+model Submission {
+  @@index([studentId])   // O(n) → O(log n) lookup
+  @@index([examId])      // Faster JOIN operations
+  @@index([submittedAt]) // Optimized date sorting
+}
+```
+
 ---
 
 ## 📝 API Endpoints
@@ -339,15 +406,32 @@ malpracticeEvents: [
 
 ---
 
+## 🚧 Future Additions
+
+- [ ] **Answer Option Shuffling** - Randomize option order per question to prevent answer sharing
+- [ ] **Time Per Question Tracking** - Analytics on time spent per question
+- [ ] **IP Geolocation** - Verify student is taking exam from expected location
+- [ ] **Session Recording** - Video proof for academic integrity disputes
+- [ ] **Lockdown Browser** - Electron-based desktop app for OS-level security (screenshot/process blocking)
+- [ ] **Multi-Tenant Support** - Organization model for institutional deployments with data isolation
+
+---
+
 ## 👨‍💻 Author
+
+**Ashish Goyal**
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?style=flat&logo=linkedin)](https://www.linkedin.com/in/ashish-goyal-66422b257/)
+[![GitHub](https://img.shields.io/badge/GitHub-Follow-black?style=flat&logo=github)](https://github.com/ashish-goyal-1)
 
 Built with ❤️ as a portfolio project demonstrating:
 - Full-stack development with React + Node.js
-- Database design with PostgreSQL + Prisma
+- Database design with PostgreSQL + Prisma + **performance indexing**
 - **Raw SQL queries** for analytics (`$queryRaw`)
 - OAuth implementation with Google
 - **AI/ML integration** with face-api.js
-- **Identity verification** with face descriptors
+- **Identity verification** using Euclidean distance on face descriptors
+- 14+ anti-cheating measures for exam integrity
 - Modern UI/UX with Tailwind CSS
 
 ---

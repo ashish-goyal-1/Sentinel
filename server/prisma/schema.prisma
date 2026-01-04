@@ -43,6 +43,9 @@ model Exam {
   submissions Submission[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+
+  @@index([teacherId])  // Index for faster teacher lookup
+  @@index([isActive])   // Index for filtering active exams
 }
 
 // Question model - belongs to an exam
@@ -53,6 +56,8 @@ model Question {
   correctOption Int    // Index of correct option (0-3)
   examId        String
   exam          Exam   @relation(fields: [examId], references: [id], onDelete: Cascade)
+
+  @@index([examId])  // Index for faster exam questions lookup
 }
 
 // Submission model - student's exam submission
@@ -70,6 +75,9 @@ model Submission {
   submittedAt       DateTime @default(now())
 
   @@unique([studentId, examId]) // One submission per student per exam
+  @@index([studentId])          // Index for student's submissions
+  @@index([examId])             // Index for exam submissions
+  @@index([submittedAt])        // Index for sorting by date
 }
 
 // Password Reset Tokens

@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { StatCardSkeleton, ExamCardSkeleton } from '../components/Skeleton';
+import Footer from '../components/Footer';
 
 const TeacherDashboard = () => {
     const { user, logout } = useAuth();
@@ -243,6 +244,8 @@ const TeacherDashboard = () => {
                     )}
                 </div>
             </main>
+
+            <Footer />
         </div>
     );
 };

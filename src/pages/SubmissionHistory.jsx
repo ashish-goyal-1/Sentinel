@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import Footer from '../components/Footer';
 
 const SubmissionHistory = () => {
     const { user, logout } = useAuth();
@@ -150,6 +151,8 @@ const SubmissionHistory = () => {
                     )}
                 </div>
             </main>
+
+            <Footer />
         </div>
     );
 };

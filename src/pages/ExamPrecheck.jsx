@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast';
 import * as faceapi from 'face-api.js';
 import api from '../services/api';
 import FaceRegistration from '../components/FaceRegistration';
+import logger from '../utils/logger';
 
 const ExamPrecheck = () => {
     const { id } = useParams();
@@ -49,20 +50,44 @@ const ExamPrecheck = () => {
         fetchExam();
     }, [id, navigate]);
 
-    // Load face-api models
+    // Load face-api models with retry
     useEffect(() => {
-        const loadModels = async () => {
+        const loadModels = async (retryCount = 0) => {
+            logger.divider('FACE DETECTION MODELS');
+            logger.info(`Loading face detection models (attempt ${retryCount + 1}/3)`);
+
             try {
                 const MODEL_URL = '/models';
-                await Promise.all([
-                    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-                    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-                    faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
-                ]);
+                logger.debug('Model URL', { MODEL_URL });
+
+                logger.info('Loading TinyFaceDetector model...');
+                await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+                logger.success('TinyFaceDetector loaded');
+
+                logger.info('Loading FaceLandmark68 model...');
+                await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+                logger.success('FaceLandmark68 loaded');
+
+                logger.info('Loading FaceRecognition model...');
+                await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+                logger.success('FaceRecognition loaded');
+
                 setModelsLoaded(true);
+                logger.success('All face detection models loaded successfully');
+                logger.divider();
             } catch (error) {
-                console.error('Error loading face models:', error);
-                toast.error('Failed to load face detection models');
+                logger.error(`Error loading face models (attempt ${retryCount + 1}/3)`, error);
+
+                if (retryCount < 2) {
+                    logger.warn(`Retrying model load in 1 second... (fallback retry mechanism)`);
+                    setTimeout(() => loadModels(retryCount + 1), 1000);
+                } else {
+                    logger.error('Failed to load AI models after 3 attempts - using fallback mode');
+                    toast.error('Failed to load AI models. Face verification may not work.');
+                    // Mark as loaded anyway to allow proceeding (with degraded functionality)
+                    setModelsLoaded(true);
+                    logger.warn('Proceeding with degraded functionality (fallback mode enabled)');
+                }
             }
         };
         loadModels();
@@ -70,19 +95,26 @@ const ExamPrecheck = () => {
 
     // Step 1: Check camera access
     const checkCamera = useCallback(async () => {
+        logger.info('CHECK 1: Camera Access');
+        logger.pushContext('Camera Check');
+
         setChecks(prev => ({
             ...prev,
             camera: { status: 'checking', message: 'Requesting camera access...' }
         }));
 
         try {
+            logger.info('Requesting camera permissions...');
             const stream = await navigator.mediaDevices.getUserMedia({
                 video: { width: 640, height: 480, facingMode: 'user' }
             });
+            logger.success('Camera permission granted');
 
             if (videoRef.current) {
+                logger.debug('Attaching stream to video element');
                 videoRef.current.srcObject = stream;
                 await videoRef.current.play();
+                logger.success('Video stream started');
             }
 
             setCameraStream(stream);
@@ -91,57 +123,87 @@ const ExamPrecheck = () => {
                 camera: { status: 'passed', message: 'Camera working' }
             }));
 
+            logger.success('Camera check passed');
+            logger.popContext();
             return true;
         } catch (error) {
-            console.error('Camera error:', error);
+            logger.error('Camera access failed', error);
             setChecks(prev => ({
                 ...prev,
                 camera: { status: 'failed', message: 'Camera access denied' }
             }));
+            logger.popContext();
             return false;
         }
     }, []);
 
     // Step 2: Check if face is registered
     const checkFaceRegistered = useCallback(async () => {
+        logger.info('CHECK 2: Face Registration Status');
+        logger.pushContext('Face Registration Check');
+
         setChecks(prev => ({
             ...prev,
             faceRegistered: { status: 'checking', message: 'Checking registration...' }
         }));
 
         try {
+            logger.info('Fetching face registration status from server...');
             const response = await api.get('/users/face-status');
+            logger.debug('Face status response', response.data);
 
             if (response.data.hasFaceRegistered) {
+                logger.success('Face is registered');
+
                 // Fetch stored descriptor
+                logger.info('Fetching stored face descriptor...');
                 const descriptorRes = await api.get('/users/face-descriptor');
                 setStoredDescriptor(new Float32Array(descriptorRes.data.descriptor));
+                logger.success('Face descriptor loaded', {
+                    descriptorLength: descriptorRes.data.descriptor.length
+                });
 
                 setChecks(prev => ({
                     ...prev,
                     faceRegistered: { status: 'passed', message: 'Face registered' }
                 }));
+
+                logger.success('Face registration check passed');
+                logger.popContext();
                 return true;
             } else {
+                logger.warn('Face not registered - action required');
                 setChecks(prev => ({
                     ...prev,
                     faceRegistered: { status: 'action', message: 'Registration required' }
                 }));
+                logger.popContext();
                 return false;
             }
         } catch (error) {
-            console.error('Face status check error:', error);
+            logger.error('Face status check failed', error);
             setChecks(prev => ({
                 ...prev,
                 faceRegistered: { status: 'failed', message: 'Check failed' }
             }));
+            logger.popContext();
             return false;
         }
     }, []);
 
     // Step 3: Verify face matches
     const checkFaceMatch = useCallback(async () => {
-        if (!storedDescriptor || !videoRef.current || !modelsLoaded) return false;
+        if (!storedDescriptor || !videoRef.current || !modelsLoaded) {
+            logger.warn('Face match check skipped - prerequisites not met', {
+                hasDescriptor: !!storedDescriptor,
+                hasVideo: !!videoRef.current,
+                modelsLoaded
+            });
+            return false;
+        }
+
+        logger.info('CHECK 3: Face Match Verification');
+        logger.pushContext('Face Match Check');
 
         setChecks(prev => ({
             ...prev,
@@ -149,47 +211,70 @@ const ExamPrecheck = () => {
         }));
 
         try {
+            logger.info('Detecting face in video stream...');
             const detection = await faceapi
                 .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
                 .withFaceLandmarks()
                 .withFaceDescriptor();
 
             if (!detection) {
+                logger.warn('No face detected in video stream');
                 setChecks(prev => ({
                     ...prev,
                     faceMatch: { status: 'failed', message: 'No face detected' }
                 }));
+                logger.popContext();
                 return false;
             }
 
+            logger.success('Face detected, computing similarity...');
             const distance = faceapi.euclideanDistance(detection.descriptor, storedDescriptor);
+            logger.debug('Face similarity calculated', {
+                distance: distance.toFixed(4),
+                threshold: 0.6,
+                match: distance < 0.6
+            });
 
             if (distance < 0.6) {
+                logger.success(`Identity verified (distance: ${distance.toFixed(4)})`);
                 setChecks(prev => ({
                     ...prev,
                     faceMatch: { status: 'passed', message: 'Identity verified' }
                 }));
+                logger.popContext();
                 return true;
             } else {
+                logger.warn(`Face mismatch detected (distance: ${distance.toFixed(4)} > 0.6)`);
                 setChecks(prev => ({
                     ...prev,
                     faceMatch: { status: 'failed', message: 'Face mismatch' }
                 }));
+                logger.popContext();
                 return false;
             }
         } catch (error) {
-            console.error('Face match error:', error);
+            logger.error('Face verification failed', error);
             setChecks(prev => ({
                 ...prev,
                 faceMatch: { status: 'failed', message: 'Verification failed' }
             }));
+            logger.popContext();
             return false;
         }
     }, [storedDescriptor, modelsLoaded]);
 
     // Step 4: Check for single face
     const checkSingleFace = useCallback(async () => {
-        if (!videoRef.current || !modelsLoaded) return false;
+        if (!videoRef.current || !modelsLoaded) {
+            logger.warn('Single face check skipped - prerequisites not met', {
+                hasVideo: !!videoRef.current,
+                modelsLoaded
+            });
+            return false;
+        }
+
+        logger.info('CHECK 4: Environment Scan (Single Face)');
+        logger.pushContext('Single Face Check');
 
         setChecks(prev => ({
             ...prev,
@@ -197,81 +282,108 @@ const ExamPrecheck = () => {
         }));
 
         try {
+            logger.info('Scanning for all faces in video stream...');
             const detections = await faceapi.detectAllFaces(
                 videoRef.current,
                 new faceapi.TinyFaceDetectorOptions()
             );
 
+            logger.debug('Face detection complete', { facesDetected: detections.length });
+
             if (detections.length === 1) {
+                logger.success('Single face confirmed - environment check passed');
                 setChecks(prev => ({
                     ...prev,
                     singleFace: { status: 'passed', message: 'Single face confirmed' }
                 }));
+                logger.popContext();
                 return true;
             } else if (detections.length === 0) {
+                logger.warn('No face detected in environment');
                 setChecks(prev => ({
                     ...prev,
                     singleFace: { status: 'failed', message: 'No face detected' }
                 }));
+                logger.popContext();
                 return false;
             } else {
+                logger.warn(`Multiple faces detected: ${detections.length} faces found`);
                 setChecks(prev => ({
                     ...prev,
                     singleFace: { status: 'failed', message: `${detections.length} faces detected` }
                 }));
+                logger.popContext();
                 return false;
             }
         } catch (error) {
-            console.error('Single face check error:', error);
+            logger.error('Environment scan failed', error);
             setChecks(prev => ({
                 ...prev,
                 singleFace: { status: 'failed', message: 'Check failed' }
             }));
+            logger.popContext();
             return false;
         }
     }, [modelsLoaded]);
 
     // Run all checks in sequence
     const runChecks = useCallback(async () => {
-        // Check camera first
-        const cameraOk = await checkCamera();
-        if (!cameraOk) return;
-
-        // Wait for models to load
-        if (!modelsLoaded) {
-            toast.loading('Loading AI models...', { id: 'models-loading' });
-            return;
-        }
-        toast.dismiss('models-loading');
-
-        // Check face registration
+        // Step 1: Check face registration FIRST (no camera needed)
+        // This avoids camera conflicts if we need to show registration modal
         const faceRegisteredOk = await checkFaceRegistered();
 
         if (!faceRegisteredOk) {
-            // Need to register face - stop camera first
-            if (cameraStream) {
-                cameraStream.getTracks().forEach(track => track.stop());
-                setCameraStream(null);
-            }
+            // Need to register face - open modal without starting camera
             setShowFaceRegistration(true);
             return;
         }
 
-        // Face match check
+        // Step 2: Face is registered, now check camera
+        const cameraOk = await checkCamera();
+        if (!cameraOk) return;
+
+        // Steps 3 & 4 require models - wait if not loaded yet
+        if (!modelsLoaded) {
+            setChecks(prev => ({
+                ...prev,
+                faceMatch: { status: 'checking', message: 'Loading AI models...' },
+                singleFace: { status: 'checking', message: 'Loading AI models...' },
+            }));
+            return; // Will re-run when models are loaded
+        }
+
+        // Step 3: Face match check
         const faceMatchOk = await checkFaceMatch();
         if (!faceMatchOk) return;
 
-        // Single face check
+        // Step 4: Single face check
         await checkSingleFace();
 
-    }, [checkCamera, checkFaceRegistered, checkFaceMatch, checkSingleFace, modelsLoaded, cameraStream]);
+    }, [checkCamera, checkFaceRegistered, checkFaceMatch, checkSingleFace, modelsLoaded]);
 
-    // Start checks when models are loaded
+    // Start checks when exam loads (not waiting for models)
     useEffect(() => {
-        if (!loading && exam && modelsLoaded) {
+        if (!loading && exam) {
             runChecks();
         }
-    }, [loading, exam, modelsLoaded, runChecks]);
+    }, [loading, exam]);
+
+    // Re-run checks when models finish loading OR storedDescriptor becomes available
+    useEffect(() => {
+        // Only proceed if ALL prerequisites are met
+        if (
+            modelsLoaded &&
+            storedDescriptor &&
+            checks.camera.status === 'passed' &&
+            checks.faceRegistered.status === 'passed' &&
+            (checks.faceMatch.status === 'pending' || checks.faceMatch.status === 'checking')
+        ) {
+            // Prerequisites met - run face verification
+            checkFaceMatch().then(ok => {
+                if (ok) checkSingleFace();
+            });
+        }
+    }, [modelsLoaded, storedDescriptor, checks.camera.status, checks.faceRegistered.status, checks.faceMatch.status, checkFaceMatch, checkSingleFace]);
 
     // Handle face registration success
     const handleFaceRegistrationSuccess = async () => {
@@ -412,12 +524,12 @@ const ExamPrecheck = () => {
                             <div
                                 key={key}
                                 className={`flex items-center justify-between p-4 rounded-xl border transition-all ${value.status === 'passed'
-                                        ? 'bg-green-900/10 border-green-700/50'
-                                        : value.status === 'failed'
-                                            ? 'bg-red-900/10 border-red-700/50'
-                                            : value.status === 'action'
-                                                ? 'bg-orange-900/10 border-orange-700/50'
-                                                : 'bg-zinc-800/50 border-zinc-700/50'
+                                    ? 'bg-green-900/10 border-green-700/50'
+                                    : value.status === 'failed'
+                                        ? 'bg-red-900/10 border-red-700/50'
+                                        : value.status === 'action'
+                                            ? 'bg-orange-900/10 border-orange-700/50'
+                                            : 'bg-zinc-800/50 border-zinc-700/50'
                                     }`}
                             >
                                 <div className="flex items-center gap-3">
@@ -438,13 +550,7 @@ const ExamPrecheck = () => {
                                 {/* Action buttons */}
                                 {value.status === 'action' && key === 'faceRegistered' && (
                                     <button
-                                        onClick={() => {
-                                            if (cameraStream) {
-                                                cameraStream.getTracks().forEach(track => track.stop());
-                                                setCameraStream(null);
-                                            }
-                                            setShowFaceRegistration(true);
-                                        }}
+                                        onClick={() => setShowFaceRegistration(true)}
                                         className="btn-primary text-sm"
                                     >
                                         Register Face

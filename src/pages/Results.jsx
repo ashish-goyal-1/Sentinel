@@ -3,6 +3,8 @@ import { useParams, Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
 import api from '../services/api';
+import Footer from '../components/Footer';
+import { getGrade } from '../utils';
 
 const Results = () => {
     const { id } = useParams();
@@ -40,15 +42,7 @@ const Results = () => {
         { name: 'Incorrect', value: incorrect, color: '#ef4444' }
     ];
 
-    const getGrade = (pct) => {
-        if (pct >= 90) return { grade: 'A+', color: 'text-green-400', message: 'Outstanding!' };
-        if (pct >= 80) return { grade: 'A', color: 'text-green-400', message: 'Excellent work!' };
-        if (pct >= 70) return { grade: 'B', color: 'text-blue-400', message: 'Good job!' };
-        if (pct >= 60) return { grade: 'C', color: 'text-yellow-400', message: 'Keep practicing!' };
-        if (pct >= 50) return { grade: 'D', color: 'text-orange-400', message: 'Room for improvement' };
-        return { grade: 'F', color: 'text-red-400', message: 'Study harder next time' };
-    };
-
+    // getGrade is imported from utils/index.js
     const gradeInfo = getGrade(percentage);
 
     return (
@@ -77,7 +71,7 @@ const Results = () => {
                                 percentage >= 40 ? 'border-yellow-500' : 'border-red-500'
                                 }`}>
                                 <span className="text-5xl font-bold">{percentage}%</span>
-                                <span className={`text-2xl font-bold mt-1 ${gradeInfo.color}`}>{gradeInfo.grade}</span>
+                                <span className={`text-2xl font-bold mt-1 ${gradeInfo.color}`}>{gradeInfo.letter}</span>
                             </div>
                             <p className="mt-4 text-xl text-zinc-300">{gradeInfo.message}</p>
                         </div>
@@ -182,6 +176,8 @@ const Results = () => {
                     </Link>
                 </div>
             </main>
+
+            <Footer />
         </div>
     );
 };

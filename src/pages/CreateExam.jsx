@@ -15,16 +15,31 @@ const CreateExam = () => {
         { text: '', options: ['', '', '', ''], correctOption: 0 }
     ]);
 
+    // Validation error state - tracks which fields have errors
+    const [errors, setErrors] = useState({
+        title: false,
+        questions: [] // Array of { text: false, options: [false, false, false, false] }
+    });
+
     const addQuestion = () => {
         setQuestions([
             ...questions,
             { text: '', options: ['', '', '', ''], correctOption: 0 }
         ]);
+        // Add error tracking for new question
+        setErrors(prev => ({
+            ...prev,
+            questions: [...prev.questions, { text: false, options: [false, false, false, false] }]
+        }));
     };
 
     const removeQuestion = (index) => {
         if (questions.length > 1) {
             setQuestions(questions.filter((_, i) => i !== index));
+            setErrors(prev => ({
+                ...prev,
+                questions: prev.questions.filter((_, i) => i !== index)
+            }));
         }
     };
 
@@ -32,38 +47,73 @@ const CreateExam = () => {
         const updated = [...questions];
         updated[index][field] = value;
         setQuestions(updated);
+
+        // Clear error when user types
+        if (field === 'text' && value.trim()) {
+            setErrors(prev => {
+                const newQuestions = [...prev.questions];
+                if (newQuestions[index]) {
+                    newQuestions[index] = { ...newQuestions[index], text: false };
+                }
+                return { ...prev, questions: newQuestions };
+            });
+        }
     };
 
     const updateOption = (questionIndex, optionIndex, value) => {
         const updated = [...questions];
         updated[questionIndex].options[optionIndex] = value;
         setQuestions(updated);
+
+        // Clear error when user types
+        if (value.trim()) {
+            setErrors(prev => {
+                const newQuestions = [...prev.questions];
+                if (newQuestions[questionIndex]) {
+                    const newOptions = [...newQuestions[questionIndex].options];
+                    newOptions[optionIndex] = false;
+                    newQuestions[questionIndex] = { ...newQuestions[questionIndex], options: newOptions };
+                }
+                return { ...prev, questions: newQuestions };
+            });
+        }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Validation
-        if (!examData.title.trim()) {
-            toast.error('Please enter an exam title');
+        // Build error state
+        let hasErrors = false;
+        const newErrors = {
+            title: !examData.title.trim(),
+            questions: questions.map(q => ({
+                text: !q.text.trim(),
+                options: q.options.map(o => !o.trim())
+            }))
+        };
+
+        // Check if any errors exist
+        if (newErrors.title) hasErrors = true;
+        newErrors.questions.forEach(q => {
+            if (q.text) hasErrors = true;
+            q.options.forEach(o => { if (o) hasErrors = true; });
+        });
+
+        if (hasErrors) {
+            setErrors(newErrors);
+            toast.error('Please fill in all required fields');
             return;
         }
 
-        const validQuestions = questions.filter(q =>
-            q.text.trim() && q.options.every(o => o.trim())
-        );
-
-        if (validQuestions.length === 0) {
-            toast.error('Please add at least one complete question');
-            return;
-        }
+        // Clear all errors
+        setErrors({ title: false, questions: [] });
 
         setLoading(true);
 
         try {
             await api.post('/exams', {
                 ...examData,
-                questions: validQuestions
+                questions
             });
             toast.success('Exam created successfully!');
             navigate('/teacher');
@@ -101,10 +151,12 @@ const CreateExam = () => {
                                 <input
                                     type="text"
                                     value={examData.title}
-                                    onChange={(e) => setExamData({ ...examData, title: e.target.value })}
-                                    className="input-field"
+                                    onChange={(e) => {
+                                        setExamData({ ...examData, title: e.target.value });
+                                        if (e.target.value.trim()) setErrors(prev => ({ ...prev, title: false }));
+                                    }}
+                                    className={`input-field ${errors.title ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                                     placeholder="e.g., Midterm Mathematics Exam"
-                                    required
                                 />
                             </div>
                             <div>
@@ -185,7 +237,7 @@ const CreateExam = () => {
                                             type="text"
                                             value={question.text}
                                             onChange={(e) => updateQuestion(qIndex, 'text', e.target.value)}
-                                            className="input-field"
+                                            className={`input-field ${errors.questions[qIndex]?.text ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                                             placeholder="Enter question text..."
                                         />
 
@@ -203,7 +255,7 @@ const CreateExam = () => {
                                                         type="text"
                                                         value={option}
                                                         onChange={(e) => updateOption(qIndex, oIndex, e.target.value)}
-                                                        className="input-field flex-1"
+                                                        className={`input-field flex-1 ${errors.questions[qIndex]?.options?.[oIndex] ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                                                         placeholder={`Option ${String.fromCharCode(65 + oIndex)}`}
                                                     />
                                                 </div>
