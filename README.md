@@ -16,6 +16,17 @@ Sentinel is a full-stack examination platform that uses AI/ML to prevent cheatin
 
 ---
 
+## Why Sentinel?
+
+Sentinel was built to explore **real-world system constraints** around security, identity verification, and real-time monitoring — not just CRUD exam flows.
+
+The focus was on:
+- Preventing cheating under adversarial behavior
+- Designing verifiable, auditable security events
+- Keeping the system scalable and observable
+
+---
+
 ## 📑 Table of Contents
 
 - [Features](#-features)
